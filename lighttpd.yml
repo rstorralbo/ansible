@@ -1,0 +1,29 @@
+- hosts: docker
+  become: yes
+  vars:
+    user: lighttpd
+    group: lighttpd
+  tasks: 
+  - name: Verificando distribuicao
+    set_fact:
+      user: www-data
+      group: www-data
+    when: ansible_distribution|lower == 'debian'
+  - name: Garantindo o epel-release em CentOS
+    package:
+      name: epel-release
+      state: present
+    when: ansible_distribution|lower == 'centos'
+  - name: Garantindo Lighttpd
+    package:
+      name: lighttpd
+      state: present
+  - name: Garantindo configuracoes
+    copy:
+      src: '{{item}}'
+      dest: /etc/lighttpd
+      owner: root
+      group: root
+    loop: 
+    - /root/playbooks/files/mime-types.conf
+    - /root/playbooks/files/lighttpd.conf

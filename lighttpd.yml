@@ -14,9 +14,9 @@
       name: epel-release
       state: present
     when: ansible_distribution|lower == 'centos'
-  - name: Garantindo Lighttpd
+  - name: Garantindo Lighttpd e Git
     package:
-      name: lighttpd
+      name: ['lighttpd', 'git']
       state: present
   - name: Garantindo configuracoes
     template:
@@ -27,6 +27,17 @@
     loop: 
     - /root/playbooks/files/mime-types.conf
     - /root/playbooks/files/lighttpd.conf
+    register: config
+  - name: Garantindo configuracoes de proxy
+    blockinfile:
+      path: /etc/lighttpd/proxy.conf
+      create: yes
+      block: |
+        $SERVER["socket"] == ":8080" {
+            proxy.server = ( "" => ( ( "host" => "192.168.10.10", "port" => "80" )))
+        }
+      insertafter: '#Configuracoes do Ansible' 
+    register: proxy
   - name: Garantindo diretorios
     file:
       path: '{{ item }}'
@@ -37,8 +48,28 @@
     - /srv/www/html
     - /var/cache/lighttpd
     - /var/logs/lighttpd
+  - name: Reiniciando Lighttpd para configuracoes
+    service:
+      name: lighttpd
+      state: restarted
+    when: config.changed or proxy.changed
   - name: Garantindo servico do Lighttpd
     service: #systemd
       name: lighttpd
       state: started # stopped, restarted, reloaded
       enabled: yes
+  - name: Removendo arquivos /srv/www/html
+    shell: 'find /srv/www/html/ -delete -mindepth 1'
+  - name: Garantindo site
+    git:
+      repo: http://172.27.11.10:3000/devops/site.git
+      dest: /srv/www/html
+      force: yes
+  - name: Garantindo contexto /srv/www/html
+    command: 'restorecon -R /srv/www/html'
+    when: ansible_distribution|lower == 'centos'
+  - get_url:
+      url: http://172.27.11.10:3000/devops/site/raw/branch/ansible/index.html 
+      dest: /srv/www/html/index.html
+      force: yes
+

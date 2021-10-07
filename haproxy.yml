@@ -15,7 +15,7 @@
   - name: Recarregando servico HAProxy
     service: #systemd
       name: haproxy
-      state: reloaded # stopped, restarted, reloaded
+      state: restarted # stopped, restarted, reloaded
     when: config.changed == True
   - name: Garantindo servico HAProxy
     service: #systemd

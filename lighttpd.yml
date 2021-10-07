@@ -19,7 +19,7 @@
       name: lighttpd
       state: present
   - name: Garantindo configuracoes
-    copy:
+    template:
       src: '{{item}}'
       dest: /etc/lighttpd
       owner: root
@@ -27,3 +27,18 @@
     loop: 
     - /root/playbooks/files/mime-types.conf
     - /root/playbooks/files/lighttpd.conf
+  - name: Garantindo diretorios
+    file:
+      path: '{{ item }}'
+      owner: '{{ user }}'
+      group: '{{ group }}'
+      state: directory 
+    loop:
+    - /srv/www/html
+    - /var/cache/lighttpd
+    - /var/logs/lighttpd
+  - name: Garantindo servico do Lighttpd
+    service: #systemd
+      name: lighttpd
+      state: started # stopped, restarted, reloaded
+      enabled: yes

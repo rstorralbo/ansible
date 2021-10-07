@@ -1,9 +1,9 @@
 - hosts: database
   become: yes
   tasks: 
-  - name: Garantindo MariaDB e Memcached
+  - name: Garantindo Pacotes
     package:
-      name: ['mariadb', 'memcached']
+      name: ['mariadb', 'memcached', 'python3-PyMySQL']
       state: present
   - name: Garantindo MariaDB e Memcached em interface privada
     lineinfile:
@@ -25,4 +25,26 @@
     loop:
     - mariadb
     - memcached
-
+  - name: Copiando base de dados
+    copy:
+      src: /root/playbooks/files/dump.sql
+      dest: /tmp/dump.sql
+  - name: Garantindo base de dados da aplicacao
+    community.mysql.mysql_db:
+      name: infraagil
+      login_unix_socket: /var/lib/mysql/mysql.sock
+    register: database
+  - name: Garantindo dados iniciais
+    community.mysql.mysql_db:
+      name: infraagil
+      login_unix_socket: /var/lib/mysql/mysql.sock
+      state: import
+      target: /tmp/dump.sql
+    when: database.changed
+  - name: Garantindo usuario da aplicacao
+    community.mysql.mysql_user:
+      name: devops
+      password: 4linux
+      priv: infraagil.*:ALL
+      host: '%'
+      login_unix_socket: /var/lib/mysql/mysql.sock

@@ -72,4 +72,15 @@
       url: http://172.27.11.10:3000/devops/site/raw/branch/ansible/index.html 
       dest: /srv/www/html/index.html
       force: yes
-
+  - name: Testando conexao com o loadbalancer
+    uri:
+      url: http://172.27.11.20
+      status_code: [200, 302, 304]
+    register: response
+    delegate_to: localhost
+    run_once: yes
+#  - name: Verificando status da conexao
+#    fail: 
+#      msg: '[{{ response.status }}] - Load balancer com problemas'
+#    run_once: yes
+#    when: response.status != 200
